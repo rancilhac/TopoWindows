@@ -1,13 +1,14 @@
 ##### A script to calculate trees in sliding windows from a vcf file. Called from Topo_windows.sh
 
 ##### L. Rancilhac
-# v. 0.1 - 15/09/2023
+# v. 0.1 - 16/10/2023
 
 library(vcfR)
 library(ape)
 
-topo.windows.sites <- function(vcf, size, phased, PREF, write.seq = T, nj = T){
-
+# last modification: add incr parameter to allow overlap between windows.
+topo.windows.sites <- function(vcf, size, incr=0, phased, PREF, write.seq = T, nj = T){
+  if(incr == 0){ incr <- size }
   vcf <- read.vcfR(vcf)
   if(phased == T){ dnabin <- vcfR2DNAbin(vcf) }
   else if(phased == F){ dnabin <- vcfR2DNAbin(vcf, extract.haps = F, consensus = T) }
@@ -18,7 +19,6 @@ topo.windows.sites <- function(vcf, size, phased, PREF, write.seq = T, nj = T){
   START <- 1
 
   seq.dir <- paste(PREF, "_sequences", sep = "")
-  print(seq.dir)
   if(write.seq == T & !file.exists(seq.dir)){ dir.create(seq.dir) }
 
   nj.file.name <- paste(PREF, "_NJ_trees.trees", sep="")
@@ -61,7 +61,8 @@ topo.windows.sites <- function(vcf, size, phased, PREF, write.seq = T, nj = T){
     stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, TREE))
 
     # increment to next window
-    START <- START + size
+    print(START)
+    START <- START + incr
   }
 
   # write information table
@@ -159,3 +160,43 @@ topo.windows.coord <- function(vcf, size, phased, PREF, write.seq = T, nj = T){
   write.table(as.data.frame(stats), STAT.NAME, quote = F, row.names = F, col.names = T, sep="\t")
 
 }
+
+tree.region <- function(vcf, regions, phased, write.seq = T, nj = T){
+  
+
+  vcf <- read.vcfR(vcf)
+  
+  for(i in 1:nrow(regions)){
+  chr <- regions[i,1]
+  curr.vcf <- vcf[vcf@fix[,1] == chr, ]
+  
+  start <- regions[i,2]
+  end <- regions[i,3]
+  
+  nj.file.name <- paste(chr, "_", start, "-", end, "_NJ_tree.tre", sep="")
+  
+ if(start > max(as.numeric(curr.vcf@fix[,2]))) { print("error: starting position after the end of vcf") }
+ if(end > max(as.numeric(curr.vcf@fix[,2]))) { end <- max(as.numeric(curr.vcf@fix[,2])) }
+ curr.vcf <- curr.vcf[which(as.numeric(curr.vcf@fix[,2]) >= start & as.numeric(curr.vcf@fix[,2]) <= end), ]
+ if(phased == T){ curr.window <- vcfR2DNAbin(curr.vcf, verbose=F, asterisk_as_del = F) }
+ else if(phased == F){ curr.window <- vcfR2DNAbin(curr.vcf, verbose=F, extract.haps = F, consensus = T, asterisk_as_del = F) }
+    
+ if(dim(curr.vcf)[1] == 0){ print("error: vcf is empty for selected region") }
+  else{
+      # write sequence in fasta format if specified
+      if(write.seq == T){
+        NAME <- paste("./", PREF, colnames(curr.window)[1],"-",colnames(curr.window)[length(curr.window[1,])],"-","pos.fasta",sep="")
+        write.FASTA(curr.window, NAME)
+      }
+      
+      # calculate tree if specified
+      if(nj == T){
+        curr.dist <- dist.dna(curr.window, model="JC69", pairwise.deletion = T)
+        curr.tree <- try(nj(curr.dist), silent = T)
+        if(class(curr.tree) == "try-error"){ print("error: tree could not be calculated") }
+        else{write.tree(curr.tree, nj.file.name, append=T)}
+      }
+  }
+  }
+  }
+
