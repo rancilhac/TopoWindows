@@ -164,8 +164,9 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
 
 tree.region <- function(vcf, regions, phased, write.seq = T, nj = T, prefix){
   
-
   vcf <- read.vcfR(vcf)
+  
+  regions <- read.table(regions)
   
   for(i in 1:nrow(regions)){
   chr <- regions[i,1]
