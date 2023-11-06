@@ -1,27 +1,26 @@
 ##### A script to calculate trees in sliding windows from a vcf file. Called from Topo_windows.sh
 
 ##### L. Rancilhac
-# v. 0.1 - 16/10/2023
+# v. 0.2 - 06/11/2023
 
 library(vcfR)
 library(ape)
 
 # last modification: add incr parameter to allow overlap between windows.
-topo.windows.sites <- function(vcf, size, incr=0, phased, PREF, write.seq = T, nj = T){
+topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T, nj = T){
   if(incr == 0){ incr <- size }
   vcf <- read.vcfR(vcf)
   if(phased == T){ dnabin <- vcfR2DNAbin(vcf) }
   else if(phased == F){ dnabin <- vcfR2DNAbin(vcf, extract.haps = F, consensus = T) }
   
-
   stats <- matrix(ncol=7)
   colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "TREE")
   START <- 1
 
-  seq.dir <- paste(PREF, "_sequences", sep = "")
+  seq.dir <- paste(prefix, "_sequences", sep = "")
   if(write.seq == T & !file.exists(seq.dir)){ dir.create(seq.dir) }
 
-  nj.file.name <- paste(PREF, "_NJ_trees.trees", sep="")
+  nj.file.name <- paste(prefix, "_NJ_trees.trees", sep="")
 
   while (START < length(dnabin[1,])) {
 
@@ -66,14 +65,16 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, PREF, write.seq = T, n
   }
 
   # write information table
-  STAT.NAME <- paste(PREF,"_",size,"_sites_windows_stats.tsv", sep="")
+  STAT.NAME <- paste(prefix,"_",size,"_sites_windows_stats.tsv", sep="")
   stats <- stats[-1,]
   write.table(as.data.frame(stats), STAT.NAME, quote = F, row.names = F, col.names = T, sep="\t")
 
 }
 
-topo.windows.coord <- function(vcf, size, phased, PREF, write.seq = T, nj = T){
-
+topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T, nj = T){
+  
+  if(incr == 0){ incr <- size }
+  
   vcf <- read.vcfR(vcf)
 
   stats <- matrix(ncol=7)
@@ -82,10 +83,10 @@ topo.windows.coord <- function(vcf, size, phased, PREF, write.seq = T, nj = T){
   NWIN <- 1
   START <- 1
 
-  seq.dir <- paste(PREF, "_sequences", sep = "")
+  seq.dir <- paste(prefix, "_sequences", sep = "")
   if(write.seq == T & !file.exists(seq.dir)){ dir.create(seq.dir) }
 
-  nj.file.name <- paste(PREF, "_NJ_trees.trees", sep="")
+  nj.file.name <- paste(prefix, "_NJ_trees.trees", sep="")
 
   LAST.POS <- max(as.numeric(vcf@fix[,2]))
 
@@ -149,19 +150,19 @@ topo.windows.coord <- function(vcf, size, phased, PREF, write.seq = T, nj = T){
     stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, TREE))
 
     # increment to next window
-    START <- START + size
+    START <- START + incr
     NWIN <- NWIN+1
     }
   }
 
   # write information table
-  STAT.NAME <- paste(PREF,"_",size,"_coordinates_windows_stats.tsv", sep="")
+  STAT.NAME <- paste(prefix,"_",size,"_coordinates_windows_stats.tsv", sep="")
   stats <- stats[-1,]
   write.table(as.data.frame(stats), STAT.NAME, quote = F, row.names = F, col.names = T, sep="\t")
 
 }
 
-tree.region <- function(vcf, regions, phased, write.seq = T, nj = T){
+tree.region <- function(vcf, regions, phased, write.seq = T, nj = T, prefix){
   
 
   vcf <- read.vcfR(vcf)
@@ -185,7 +186,7 @@ tree.region <- function(vcf, regions, phased, write.seq = T, nj = T){
   else{
       # write sequence in fasta format if specified
       if(write.seq == T){
-        NAME <- paste("./", PREF, colnames(curr.window)[1],"-",colnames(curr.window)[length(curr.window[1,])],"-","pos.fasta",sep="")
+        NAME <- paste("./", prefix, colnames(curr.window)[1],"-",colnames(curr.window)[length(curr.window[1,])],"-","pos.fasta",sep="")
         write.FASTA(curr.window, NAME)
       }
       
