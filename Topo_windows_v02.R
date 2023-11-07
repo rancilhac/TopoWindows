@@ -6,15 +6,16 @@
 library(vcfR)
 library(ape)
 
-# last modification: add incr parameter to allow overlap between windows.
-topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T, nj = T){
+# Main functions
+
+topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T, nj = T, dna.dist){
   if(incr == 0){ incr <- size }
   vcf <- read.vcfR(vcf)
   if(phased == T){ dnabin <- vcfR2DNAbin(vcf) }
   else if(phased == F){ dnabin <- vcfR2DNAbin(vcf, extract.haps = F, consensus = T) }
   
-  stats <- matrix(ncol=7)
-  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "TREE")
+  stats <- matrix(ncol=8)
+  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "PROP.PIS", "TREE")
   START <- 1
 
   seq.dir <- paste(prefix, "_sequences", sep = "")
@@ -30,34 +31,47 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
 
     # extract the data for the defined window
     curr.window <- dnabin[,START:END]
-
-    # write sequence in fasta format if specified
-    if(write.seq == T){
-	      NAME <- paste(seq.dir, "/", colnames(curr.window)[1],"-",colnames(curr.window)[length(curr.window[1,])],"-",length(curr.window[1,]),"pos.fasta",sep="")
-      write.FASTA(curr.window, NAME)
-    }
-
-    # calculate tree
-    if(nj == T){
-      curr.dist <- dist.dna(curr.window, model="JC69", pairwise.deletion = T)
-      curr.tree <- try(nj(curr.dist), silent = T)
-      if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
-        TREE <- "NA"}
-      else{write.tree(curr.tree, nj.file.name, append=T)
-        TREE <- "YES"}
-    }
-    else{ TREE <- "NA" }
-
-    # collect window information
+    
     CHR <- strsplit(colnames(curr.window)[1], "_")[[1]][1]
     CHR.START <- strsplit(colnames(curr.window)[1], "_")[[1]][2]
     CHR.END <- strsplit(colnames(curr.window)[length(curr.window[1,])], "_")[[1]][2]
+
+    # write sequence in fasta format if specified
+    if(write.seq == T){
+	      NAME <- paste(seq.dir, "/", CHR,"-", CHR.START, "-", CHR.END,".fasta",sep="")
+      write.FASTA(curr.window, NAME)
+    }
+    
+    # calculate tree
+    if(nj == T){
+      curr.window <- as.character(curr.window)
+      miss.seq <- which(apply(curr.window, 1, missing.seq) == 0)
+      if(length(miss.seq) > 0){
+      curr.window <- curr.window[-miss.seq, ]
+      cat(paste("\nthe following sequences were removed from window ", CHR.START, "-", CHR.END, " because they contained only Ns\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+      cat(paste(rownames(curr.window)[miss.seq], "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+      }
+      curr.window <- as.DNAbin(curr.window)
+      curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
+      curr.tree <- try(njs(curr.dist), silent = T)
+      if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
+        TREE <- "NA"
+        cat(paste("\nthe tree could no be calculated for window ", CHR.START, "-", CHR.END, "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
+      else if(class(try(write.tree(curr.tree), silent=T)) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
+        TREE <- "NA"
+        cat(paste("\nthe tree could no be written for window ", CHR.START, "-", CHR.END, "; this may be because some sequences have too much missing data or are too distant from each other\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
+      else{write.tree(curr.tree, nj.file.name, append=T)
+        TREE <- "YES"}
+    }
+
+    # collect window information
     WIN.SIZE <- as.numeric(CHR.END) - as.numeric(CHR.START)
     NSITES <- length(curr.window[1,])
+    PROP.PIS <- prop.pis(as.character(curr.window))
     PROP.MISS <- round(length(which(curr.window == "f0"))/length(curr.window), digits=4)
 
     # write window information
-    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, TREE))
+    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE))
 
     # increment to next window
     print(START)
@@ -65,20 +79,20 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
   }
 
   # write information table
-  STAT.NAME <- paste(prefix,"_",size,"_sites_windows_stats.tsv", sep="")
+  STAT.NAME <- paste(prefix,"_windows_stats.tsv", sep="")
   stats <- stats[-1,]
   write.table(as.data.frame(stats), STAT.NAME, quote = F, row.names = F, col.names = T, sep="\t")
 
 }
 
-topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T, nj = T){
+topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T, nj = T, dna.dist){
   
   if(incr == 0){ incr <- size }
   
   vcf <- read.vcfR(vcf)
 
-  stats <- matrix(ncol=7)
-  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "TREE")
+  stats <- matrix(ncol=8)
+  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.PIS", "PROP.MISS", "TREE")
 
   NWIN <- 1
   START <- 1
@@ -95,6 +109,8 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
     paste("processing window ", NWIN, sep="")
     # define the end of the window
     END <- START + (size - 1)
+    
+    print(paste(START, "-", END, sep=""))
 
     if(END > LAST.POS) { END <- LAST.POS }
 
@@ -120,34 +136,46 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
       NWIN <- NWIN+1
     }
     else{
-
+    
+    CHR <- strsplit(colnames(curr.window)[1], "_")[[1]][1]
+    CHR.START <- START
+    CHR.END <- END
     # write sequence in fasta format if specified
     if(write.seq == T){
-      NAME <- paste(seq.dir, "/", colnames(curr.window)[1],"-",colnames(curr.window)[length(curr.window[1,])],"-",size,"pos.fasta",sep="")
+      NAME <- paste(seq.dir, "/", CHR,"-",CHR.START, "-", CHR.END,".fasta",sep="")
       write.FASTA(curr.window, NAME)
     }
 
     # calculate tree if specified
     if(nj == T){
-      curr.dist <- dist.dna(curr.window, model="JC69", pairwise.deletion = T)
-      curr.tree <- try(nj(curr.dist), silent = T)
+      curr.window <- as.character(curr.window)
+      miss.seq <- which(apply(curr.window, 1, missing.seq) == 0)
+      if(length(miss.seq) > 0){
+        curr.window <- curr.window[-miss.seq, ]
+        cat(paste("\nthe following sequences were removed from window ", CHR.START, "-", CHR.END, " because they contained only Ns\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+        cat(paste(rownames(curr.window)[miss.seq], "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+      }
+      curr.window <- as.DNAbin(curr.window)
+      curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
+      curr.tree <- try(njs(curr.dist), silent = T)
       if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
-        TREE <- "NA"}
+        TREE <- "NA"
+        cat(paste("\nthe tree could no be calculated for window ", CHR.START, "-", CHR.END, "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
+      else if(class(try(write.tree(curr.tree), silent=T)) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
+        TREE <- "NA"
+        cat(paste("\nthe tree could no be written for window ", CHR.START, "-", CHR.END, "; this may be because some sequences have too much missing data or are too distant from each other\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
       else{write.tree(curr.tree, nj.file.name, append=T)
         TREE <- "YES"}
     }
-    else{ TREE <- "NA" }
 
     # collect window information
-    CHR <- strsplit(colnames(curr.window)[1], "_")[[1]][1]
-    CHR.START <- START
-    CHR.END <- END
     WIN.SIZE <- as.numeric(CHR.END) - as.numeric(CHR.START)
     NSITES <- length(curr.window[1,])
+    PROP.PIS <- prop.pis(as.character(curr.window))
     PROP.MISS <- round(length(which(curr.window == "f0"))/length(curr.window), digits=4)
 
     # write window information
-    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, TREE))
+    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE))
 
     # increment to next window
     START <- START + incr
@@ -187,18 +215,50 @@ tree.region <- function(vcf, regions, phased, write.seq = T, nj = T, prefix){
   else{
       # write sequence in fasta format if specified
       if(write.seq == T){
-        NAME <- paste("./", prefix, colnames(curr.window)[1],"-",colnames(curr.window)[length(curr.window[1,])],"-","pos.fasta",sep="")
+        NAME <- paste("./", prefix, chr,"-", start, "-", end, ".fasta",sep="")
         write.FASTA(curr.window, NAME)
       }
       
       # calculate tree if specified
       if(nj == T){
+        curr.window <- as.character(curr.window)
+        miss.seq <- which(apply(curr.window, 1, missing.seq) == 0)
+        if(length(miss.seq) > 0){
+          curr.window <- curr.window[-miss.seq, ]
+          cat(paste("\nthe following sequences were removed from window ", start, "-", end, " because they contained only Ns\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+          cat(paste(rownames(curr.window)[miss.seq], "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+        }
+        curr.window <- as.DNAbin(curr.window)
         curr.dist <- dist.dna(curr.window, model="JC69", pairwise.deletion = T)
         curr.tree <- try(nj(curr.dist), silent = T)
-        if(class(curr.tree) == "try-error"){ print("error: tree could not be calculated") }
+        if(class(curr.tree) == "try-error"){ cat(paste("\nthe tree could no be calculated for region ", chr, ":", start, "-", end, "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
+        else if(class(try(write.tree(curr.tree), silent=T)) == "try-error"){ cat(paste("\nthe tree could no be written for window ", chr, ":", start, "-", end, "; this may be because some sequences have too much missing data or are too distant from each other\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
         else{write.tree(curr.tree, nj.file.name, append=T)}
       }
   }
   }
   }
 
+# Helper functions
+
+prop.pis <- function(x){
+  pars.inf <- function(x) {
+    x <- table(x)
+    x <- x[x > 1]
+    n <- c("-", "n", "b", "h", "d", 
+           "v", "k", "s", "r", "w", 
+           "y")
+    if (length(x[!names(x) %in% n]) > 1) 
+      x <- TRUE
+    else FALSE
+  }
+  nbchar <- dim(x)[2]
+  out <- apply(x, 2, pars.inf)
+  out <- round(length(out[out])/nbchar, digits=3)
+  return(out)
+  
+}
+
+missing.seq <- function(x){
+  length(which(names(table(x)) != "n"))
+  }
