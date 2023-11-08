@@ -69,7 +69,7 @@ For each region, a neighbor-joining tree (if `nj=T`) and/or a fasta sequence (if
 
 ## Running in an unix command line environment
 
-It may be useful to execute TopoWindows directly from a unix CL environment, especially when working on a HPC. To help with that I provide a wrapper script which can be executed as follow: `Rscript Topo_windows_v02_cl_wrapper.R --vcf --prefix  --phased --nj --ali --dist [--regions | --type --size --incr]`. The combination of arguments used will determine which of the three functions is run.
+It may be useful to execute TopoWindows directly from a unix CL environment, especially when working on a HPC. To help with that I provide a wrapper script which can be executed as follow: `Rscript Topo_windows_v02_cl_wrapper.R --vcf --prefix  --phased --nj --ali --dist [--regions | --type --size --incr]`. The combination of arguments used will determine which of the three functions is run. Before running the script, one must edit the first line to provide the full path to `Topo_windows_v02.R`.
 
 *Arguments:*
 
