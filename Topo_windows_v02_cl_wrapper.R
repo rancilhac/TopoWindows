@@ -18,7 +18,9 @@ option_list <- list(
   make_option(c("-i", "--incr"), type="numeric", default=0, 
               help="overlap between windows", metavar="numeric"),
   make_option(c("-r", "--regions"), type="character", default=NULL, 
-              help="A bed file specifying regions in which to calculate trees", metavar="character")
+              help="A bed file specifying regions in which to calculate trees", metavar="character"),
+  make_option(c("-b", "--dist"), type="character", default=NULL, 
+              help="which model to use to calculate genetic distances", metavar="character")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -34,11 +36,12 @@ NJ <- opt$nj
 ALN <- opt$ali
 INCR <- opt$incr
 REG <- opt$regions
+DIST <- opt$dist
 
 if(!is.null(REG)){
-  tree.region(vcf=VCF, regions=REG, phased=PHASED, write.seq=ALN, nj=NJ, prefix=PREF)
+  tree.region(vcf=VCF, regions=REG, phased=PHASED, write.seq=ALN, nj=NJ, prefix=PREF, dna.dist=DIST)
 } else if( TYPE == "s"){
-  topo.windows.sites(vcf=VCF, size=SIZE, incr=INCR, prefix=PREF, phased=PHASED, write.seq=ALN, nj=NJ)
+  topo.windows.sites(vcf=VCF, size=SIZE, incr=INCR, prefix=PREF, phased=PHASED, write.seq=ALN, nj=NJ, dna.dist=DIST)
 } else if( TYPE == "c" ){
-  topo.windows.coord(vcf=VCF, size=SIZE, incr=INCR, prefix=PREF, phased=PHASED, write.seq=ALN, nj=NJ)
+  topo.windows.coord(vcf=VCF, size=SIZE, incr=INCR, prefix=PREF, phased=PHASED, write.seq=ALN, nj=NJ, dna.dist=DIST)
 }
