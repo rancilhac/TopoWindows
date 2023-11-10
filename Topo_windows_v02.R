@@ -54,7 +54,7 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
       curr.window <- as.DNAbin(curr.window)
       curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
       curr.dist[curr.dist == Inf] <- NA
-      cat(paste("\nWarning: ", length(which(is.na(d)))/length(d),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+      cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
       curr.tree <- try(njs(curr.dist), silent = T)
       if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
         TREE <- "NA"
@@ -161,7 +161,7 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
       curr.window <- as.DNAbin(curr.window)
       curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
       curr.dist[curr.dist == Inf] <- NA
-      cat(paste("\nWarning: ", length(which(is.na(d)))/length(d),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+      cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
       curr.tree <- try(njs(curr.dist), silent = T)
       if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
         TREE <- "NA"
