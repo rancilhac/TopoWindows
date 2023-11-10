@@ -14,8 +14,8 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
   if(phased == T){ dnabin <- vcfR2DNAbin(vcf) }
   else if(phased == F){ dnabin <- vcfR2DNAbin(vcf, extract.haps = F, consensus = T) }
   
-  stats <- matrix(ncol=8)
-  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "PROP.PIS", "TREE")
+  stats <- matrix(ncol=9)
+  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "PROP.PIS", "TREE", "NTIPS")
   START <- 1
 
   seq.dir <- paste(prefix, "_sequences", sep = "")
@@ -63,7 +63,8 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
         TREE <- "NA"
         cat(paste("\nthe tree could no be written for window ", CHR.START, "-", CHR.END, "; this may be because some sequences have too much missing data or are too distant from each other\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
       else{write.tree(curr.tree, nj.file.name, append=T)
-        TREE <- "YES"}
+        TREE <- "YES"
+	NTIPS <- Ntip(curr.tree)}
     }
 
     # collect window information
@@ -73,7 +74,7 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
     PROP.MISS <- round(length(which(curr.window == "f0"))/length(curr.window), digits=4)
 
     # write window information
-    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE))
+    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE, NTIPS))
 
     # increment to next window
     print(START)
@@ -93,8 +94,8 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
   
   vcf <- read.vcfR(vcf)
 
-  stats <- matrix(ncol=8)
-  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.PIS", "PROP.MISS", "TREE")
+  stats <- matrix(ncol=9)
+  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.PIS", "PROP.MISS", "TREE", "NTIPS")
 
   NWIN <- 1
   START <- 1
@@ -169,7 +170,8 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
         TREE <- "NA"
         cat(paste("\nthe tree could no be written for window ", CHR.START, "-", CHR.END, "; this may be because some sequences have too much missing data or are too distant from each other\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
       else{write.tree(curr.tree, nj.file.name, append=T)
-        TREE <- "YES"}
+        TREE <- "YES"
+	NTIPS <- Ntip(curr.tree)}
     }
 
     # collect window information
@@ -179,7 +181,7 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
     PROP.MISS <- round(length(which(curr.window == "f0"))/length(curr.window), digits=4)
 
     # write window information
-    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE))
+    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE, NTIPS))
 
     # increment to next window
     START <- START + incr
