@@ -16,6 +16,7 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
   
   stats <- matrix(ncol=9)
   colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "PROP.PIS", "TREE", "NTIPS")
+  CHR <- getFIX(vcf)[,1][1]
   START <- 1
 
   seq.dir <- paste(prefix, "_sequences", sep = "")
@@ -32,9 +33,8 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
     # extract the data for the defined window
     curr.window <- dnabin[,START:END]
     
-    CHR <- strsplit(colnames(curr.window)[1], "_")[[1]][1]
-    CHR.START <- strsplit(colnames(curr.window)[1], "_")[[1]][2]
-    CHR.END <- strsplit(colnames(curr.window)[length(curr.window[1,])], "_")[[1]][2]
+    CHR.START <- strsplit(colnames(curr.window)[1], "_")[[1]][length(strsplit(colnames(curr.window)[1], "_")[[1]])]
+    CHR.END <- strsplit(colnames(curr.window)[length(curr.window[1,])], "_")[[1]][length(strsplit(colnames(curr.window)[length(curr.window[1,])], "_")[[1]])]
 
     # write sequence in fasta format if specified
     if(write.seq == T){
