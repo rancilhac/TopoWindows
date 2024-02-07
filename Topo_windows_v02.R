@@ -74,7 +74,7 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
     PROP.MISS <- round(length(which(curr.window == "f0"))/length(curr.window), digits=4)
 
     # write window information
-    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE, NTIPS))
+    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, PROP.PIS, TREE, NTIPS))
 
     # increment to next window
     print(START)
@@ -95,7 +95,7 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
   vcf <- read.vcfR(vcf)
 
   stats <- matrix(ncol=9)
-  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.PIS", "PROP.MISS", "TREE", "NTIPS")
+  colnames(stats) <- c("CHR","CHR.START", "CHR.END", "CHR.SIZE", "NSITES", "PROP.MISS", "PROP.PIS", "TREE", "NTIPS")
 
   NWIN <- 1
   START <- 1
@@ -129,10 +129,11 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
       CHR.END <- END
       WIN.SIZE <- as.numeric(CHR.END) - as.numeric(CHR.START)
       NSITES <- length(curr.window[1,])
+      PROP.PIS <- 0
       PROP.MISS <- round(length(which(curr.window == "f0"))/length(curr.window), digits=4)
 
       # write window information
-      stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, TREE))
+      stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, PROP.PIS, TREE))
 
       # increment to next window
       START <- START + size
@@ -181,7 +182,7 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
     PROP.MISS <- round(length(which(curr.window == "f0"))/length(curr.window), digits=4)
 
     # write window information
-    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.PIS, PROP.MISS, TREE, NTIPS))
+    stats <- rbind(stats, c(CHR, CHR.START, CHR.END, WIN.SIZE, NSITES, PROP.MISS, PROP.PIS, TREE, NTIPS))
 
     # increment to next window
     START <- START + incr
