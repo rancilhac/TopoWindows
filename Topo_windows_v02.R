@@ -238,8 +238,10 @@ tree.region <- function(vcf, regions, phased, write.seq = T, nj = T, prefix, dna
         curr.window <- as.DNAbin(curr.window)
         curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
         curr.dist[curr.dist == Inf] <- NA
-        cat(paste("\nWarning: ", length(which(is.na(d)))/length(d),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
-        curr.tree <- try(nj(curr.dist), silent = T)
+	if(length(which(is.na(curr.dist)))/length(curr.dist)){
+	cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+        }
+	curr.tree <- try(nj(curr.dist), silent = T)
         if(class(curr.tree) == "try-error"){ cat(paste("\nthe tree could no be calculated for region ", chr, ":", start, "-", end, "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
         else if(class(try(write.tree(curr.tree), silent=T)) == "try-error"){ cat(paste("\nthe tree could no be written for window ", chr, ":", start, "-", end, "; this may be because some sequences have too much missing data or are too distant from each other\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
         else{write.tree(curr.tree, nj.file.name, append=T)}
