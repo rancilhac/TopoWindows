@@ -66,6 +66,7 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
         TREE <- "YES"
 	NTIPS <- Ntip(curr.tree)}
     }
+    else if(nj == F){ TREE <- NA }
 
     # collect window information
     WIN.SIZE <- as.numeric(CHR.END) - as.numeric(CHR.START)
@@ -174,6 +175,7 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
         TREE <- "YES"
 	NTIPS <- Ntip(curr.tree)}
     }
+    else if(nj == F){ TREE <- NA }
 
     # collect window information
     WIN.SIZE <- as.numeric(CHR.END) - as.numeric(CHR.START)
