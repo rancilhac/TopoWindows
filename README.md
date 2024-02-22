@@ -26,7 +26,7 @@ Use either `topo.windows.sites(vcf, size, incr, phased, prefix, write.seq, nj, d
 
 *Arguments:*
 
-- `vcf`: path to the vcf file to use. Can be gzipped.
+- `vcf`: path to the vcf file to use. Can be gzipped. *WARNING: as of now, the script is not able to handle vcfs that contain several chromosomes/contigs, so these must be split beforehand and the script run on each independently. I am currently working on an update to account for that.*
 - `size`: size of the windows (either SNPs or bp).
 - `incr`: overlap between windows. incr=0 means no overlap.
 - `phased`: boolean defining whether the vcf is phased. If `T`, then two sequences are used for each (diploid) individuals, corresponding to the two haplotypes. If `F`, a consensus sequence is called, using IUPAC code for heterozyguous sites.
