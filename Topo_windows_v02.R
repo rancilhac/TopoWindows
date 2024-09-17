@@ -1,7 +1,7 @@
 ##### A script to calculate trees in sliding windows from a vcf file. Called from Topo_windows.sh
 
 ##### L. Rancilhac
-# v. 0.2 - 06/11/2023
+# v. 0.3 - 09/2024
 
 library(vcfR)
 library(ape)
@@ -54,7 +54,8 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
       curr.window <- as.DNAbin(curr.window)
       curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
       curr.dist[curr.dist == Inf] <- NA
-      cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+      if(length(which(is.na(curr.dist))) > 0){
+      cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T) }
       curr.tree <- try(njs(curr.dist), silent = T)
       if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
         TREE <- "NA"
@@ -163,7 +164,8 @@ topo.windows.coord <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
       curr.window <- as.DNAbin(curr.window)
       curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
       curr.dist[curr.dist == Inf] <- NA
-      cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
+      if(length(which(is.na(curr.dist))) > 0){
+      cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T) }
       curr.tree <- try(njs(curr.dist), silent = T)
       if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
         TREE <- "NA"
@@ -240,7 +242,7 @@ tree.region <- function(vcf, regions, phased, write.seq = T, nj = T, prefix, dna
         curr.window <- as.DNAbin(curr.window)
         curr.dist <- dist.dna(curr.window, model=dna.dist, pairwise.deletion = T)
         curr.dist[curr.dist == Inf] <- NA
-	if(length(which(is.na(curr.dist)))/length(curr.dist)){
+	if(length(which(is.na(curr.dist))) > 0){
 	cat(paste("\nWarning: ", length(which(is.na(curr.dist)))/length(curr.dist),"% of the distances could not be calculated in window", CHR.START, "-", CHR.END, ". A NJ tree is still calculated. This is likely because some sequences are too divergent. You may want to use the \"raw\" distance model or use larger windows.\n", sep=""), file=paste(prefix,".log",sep=""), append=T)
         }
 	curr.tree <- try(nj(curr.dist), silent = T)
