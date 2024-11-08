@@ -6,9 +6,10 @@ TopoWindows offers R functions to calculate phylogenetic trees in genomic interv
 
 To use TopoWindows in an R environment, simply run `source("/path/to/Topo_windows_v02.R")`.
 
-Two dependencies must be installed beforehand:
+Three dependencies must be installed beforehand:
 - `ape` (https://cran.r-project.org/web/packages/ape/index.html)
 - `vcfR` (https://cran.r-project.org/web/packages/vcfR/index.html)
+- `phangorn` (https://cran.r-project.org/web/packages/phangorn/index.html)
 
 To run TopoWindows from a unix command line environment (see below), `optparse` (https://cran.r-project.org/web/packages/optparse/index.html) must also be installed.
 
@@ -22,7 +23,7 @@ Once TopoWindows is loaded into the environment, three main functions are availa
 
 ### Trees in sliding windows
 
-Use either `topo.windows.sites(vcf, size, incr, phased, prefix, write.seq, nj, dna.dist)` or `topo.windows.coord(vcf, size, incr, phased, prefix, write.seq, nj, dna.dist)`. `topo.windows.sites` defines sliding windows based on a fixed number of SNPs, while `topo.windows.coord` defines them based on fixed coordinates. In both cases, the first window starts with the first position in the vcf file, and the last one ends with the end of the vcf.
+Use either `topo.windows.sites(vcf, size, incr, phased, prefix, write.seq, tree, dna.model, missing.thresh, force)` or `topo.windows.coord(vcf, size, incr, phased, prefix, write.seq, tree, dna.model, missing.thresh, force)`. `topo.windows.sites` defines sliding windows based on a fixed number of SNPs, while `topo.windows.coord` defines them based on fixed coordinates. In both cases, the first window starts with the first position in the vcf file, and the last one ends with the end of the vcf.
 
 *Arguments:*
 
@@ -32,14 +33,16 @@ Use either `topo.windows.sites(vcf, size, incr, phased, prefix, write.seq, nj, d
 - `phased`: boolean defining whether the vcf is phased. If `T`, then two sequences are used for each (diploid) individuals, corresponding to the two haplotypes. If `F`, a consensus sequence is called, using IUPAC code for heterozyguous sites.
 - `prefix`: a prefix for the output files.
 - `write.seq`: a boolean defining whether to write a sequence in fasta format for each window.
-- `nj`: a boolean defining whether to calculate neighbor-joining trees. if `T`, the `njs` function of `ape` is used to accomodate for missing data in the distance matrix (see `ape` manual for more details). 
-- `dna.dist`: the model used to calculate the distance matrices for the nj trees (e.g., "raw", "JC69"). See manual for function `dist.dna` in the `ape` package for more details. Note that a pairwise deletion approach is used. Some models may return missing values if two sequences are too different, which often happens when there are lots of missing data. In such cases it may be worth using `dna.dist="raw"`. Distance calculation will also fail if one or more sequence(s) contains only missing data. Such sequences are thus removed before calculating the tree (see log file below).
+- `tree`: defines how to calculate trees. `"NJ"` specifies neighbor-joining (with the `bionjs` function of ape), `"ML"` specifies maximum-likelihood (with the `fit_ml` function of phangorn) and `"N"` desables phylogenetic inference.
+- `dna.model`: the model used to calculate the distance matrices for the nj trees (e.g., "raw", "JC"). See manual for function `dist.dna` in the `ape` package for more details. Note that a pairwise deletion approach is used. Some models may return missing values if two sequences are too different, which often happens when there are lots of missing data. In such cases it may be worth using `dna.dist="raw"`. Distance calculation will also fail if one or more sequence(s) contains only missing data. Such sequences are thus removed before calculating the tree (see log file below).
+- `missing.thresh`: defines a proportion of missing genotypes above which sequences are removed from a given window before calculating the tree. This can strongly improve both NJ and ML inference.
+- `force`: a boolean. If set to `TRUE`, pre-existing output files with same prefix will be over-written. Otherwise the analysis is interrupted.
 
 *Output:*
 
 Three output files are written:
-- `prefix_NJ_trees.trees`: the NJ trees, one per line in newick format (only if `nj=T`). If tree inference failed, NA is written instead.
-- `prefix_stats.tsv`: a tab-separated table giving information about the windows analyzed. It contains the following columns: CHR=chromosome, CHR.START=starting coordinate, CHR.END=ending coordinate, WIN.SIZE=size of the window in bp, NSITES=number of SNPs in the window, PROP.PIS=proportion of parsimony informative sites in the window, PROP.MISS=proportion of missing genotypes in the window, TREE=whether a tree could be inferred (YES) or not (NA).
+- `prefix.trees`: the NJ trees, one per line in newick format (only if `nj=T`). If tree inference failed, NA is written instead.
+- `prefix_windows_stats.tsv`: a tab-separated table giving information about the windows analyzed. It contains the following columns: CHR=chromosome, CHR.START=starting coordinate, CHR.END=ending coordinate, WIN.SIZE=size of the window in bp, NSITES=number of SNPs in the window, PROP.PIS=proportion of parsimony informative sites in the window, PROP.MISS=proportion of missing genotypes in the window, TREE=whether a tree could be inferred (YES) or not (NA).
 - `prefix.log`: a log file indicating windows for which some sequences were removed (if they contained only missing data), and windows for which tree inference failed.
 
 In addition, if `write.seq=T`, a folder `prefix_sequences` will be created, containing a fasta sequence for each window.
@@ -52,7 +55,7 @@ In addition, if `write.seq=T`, a folder `prefix_sequences` will be created, cont
 
 ### Trees in user-specified regions
 
-Use `tree.region(vcf, regions, phased, write.seq, nj, prefix)` to calculate trees in one or more pre-defined regions.
+Use `tree.region(vcf, regions, phased, write.seq, tree, prefix, dna.model, missing.thresh, force)` to calculate trees in one or more pre-defined regions.
 
 *Arguments:*
 
@@ -69,10 +72,10 @@ For each region, a neighbor-joining tree (if `nj=T`) and/or a fasta sequence (if
 
 ## Running in an unix command line environment
 
-It may be useful to execute TopoWindows directly from a unix CL environment, especially when working on a HPC. To help with that I provide a wrapper script which can be executed as follow: `Rscript Topo_windows_v02_cl_wrapper.R --vcf --prefix  --phased --nj --ali --dist [--regions | --type --size --incr]`. The combination of arguments used will determine which of the three functions is run. Before running the script, one must edit the first line to provide the full path to `Topo_windows_v02.R`.
+It may be useful to execute TopoWindows directly from a unix CL environment, especially when working on a HPC. To help with that I provide a wrapper script which can be executed as follow: `Rscript Topo_windows_v04_cl_wrapper.R --vcf --prefix  --phased --tree --ali --dna_model --force --missingness [--regions OR --window_type --size --incr]`. The combination of arguments used will determine which of the three functions is run. Before running the script, one must edit the first line to provide the full path to `Topo_windows_v04.R`.
 
 *Arguments:*
 
-- `--regions`: path to a regions table for `tree.region`. If this argument is specified, `tree.region` is run, and `--type`, `--size` and `--incr` are not needed. (default: NULL)
-- `--type`: the type of sliding windows to use (either `c` for coordinates or `s` for sites). If `--type c` is specified `topo.windows.coord` is run, if `--type s` is specified `topo.windows.sites` is run.
+- `--regions`: path to a regions table for `tree.region`. If this argument is specified, `tree.region` is run, and `--window_type`, `--size` and `--incr` are not needed and will be ignored if provided. (default: NULL)
+- `--window_type`: the type of sliding windows to use (either `c` for coordinates or `s` for sites). If `--window_type c` is specified `topo.windows.coord` is run, if `--window_type s` is specified `topo.windows.sites` is run.
 
