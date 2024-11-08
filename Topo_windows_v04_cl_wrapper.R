@@ -1,4 +1,4 @@
-source("/path/to/Topo_windows_v02.R")
+source("/path/to/Topo_windows_v04.R")
 
 library(optparse)
 
@@ -7,7 +7,7 @@ option_list <- list(
               help="prefix for output file", metavar="character"),
   make_option(c("-v", "--vcf"), type="character", default=NULL, 
               help="path of input vcf file", metavar="character"),
-  make_option(c("-w", "--window-type"), type="character", default=NULL, 
+  make_option(c("-w", "--window_type"), type="character", default=NULL, 
               help="type of windows to use (coordinates or sites)", metavar="character"),
   make_option(c("-s", "--size"), type="numeric", default=NULL, 
               help="size of windows", metavar="numeric"),
@@ -21,7 +21,7 @@ option_list <- list(
               help="overlap between windows", metavar="numeric"),
   make_option(c("-r", "--regions"), type="character", default=NULL, 
               help="A bed file specifying regions in which to calculate trees", metavar="character"),
-  make_option(c("-m", "--dna-model"), type="character", default=NULL, 
+  make_option(c("-m", "--dna_model"), type="character", default=NULL, 
               help="Substitution model used to calculate the phylogenies", metavar="character"),
   make_option(c("-f", "--force"), type="logical", default=NULL, 
               help="Whether to over-write pre-existing output files", metavar="logical"),
@@ -35,14 +35,14 @@ opt <- parse_args(opt_parser)
 
 PREF <- opt$prefix
 VCF <- opt$vcf
-TYPE <- opt$window-type
+TYPE <- opt$window_type
 SIZE <- opt$size
 PHASED <- opt$phased
 TREE <- opt$tree
 ALN <- opt$ali
 INCR <- opt$incr
 REG <- opt$regions
-MODEL <- opt$dna-model
+MODEL <- opt$dna_model
 FORCE <- opt$force
 MISS <- opt$missingness
 
