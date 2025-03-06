@@ -66,11 +66,13 @@ topo.windows.sites <- function(vcf, size, incr=0, phased, prefix, write.seq = T,
       curr.dist[curr.dist == Inf] <- NA
       if(tree == "ML"){
         curr.tree <- try(ml.phylo(curr.window, curr.dist, dna.model), silent = T)
-        if(class(curr.tree$tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
+        if(class(curr.tree) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
           TREE <- "NA"
+          NTIPS <- "NA"                                  
           cat(paste("\nThe tree could no be calculated for window ", CHR.START, "-", CHR.END, "\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
         else if(class(try(write.tree(curr.tree$tree), silent=T)) == "try-error"){ cat("NA\n", file=nj.file.name, append=T)
           TREE <- "NA"
+          NTIPS <- "NA"
           cat(paste("\nThe tree could no be written for window ", CHR.START, "-", CHR.END, "; this may be because some sequences have too much missing data or are too distant from each other\n", sep=""), file=paste(prefix,".log",sep=""), append=T)}
         else{write.tree(curr.tree$tree, nj.file.name, append=T)
           TREE <- "YES"
